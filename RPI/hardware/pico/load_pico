@@ -1,0 +1,2 @@
+ sudo cp $1 /mnt/pico
+ sudo sync
