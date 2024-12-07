@@ -128,7 +128,7 @@ void pwm_led() {
 
 
 
-static const uint DRIVER_1_OK = 27;
+//static const uint DRIVER_1_OK = 27;
 static const uint MOTOR_1A_FORWARD = 26;
 static const uint MOTOR_1A_BACKWARD = 2;
 static const uint MOTOR_1A_PWM = 3;
@@ -136,7 +136,7 @@ static const uint MOTOR_1B_FORWARD = 6;
 static const uint MOTOR_1B_BACKWARD = 7;
 static const uint MOTOR_1B_PWM = 8;
 
-static const uint DRIVER_2_OK = 9;
+//static const uint DRIVER_2_OK = 9;
 static const uint MOTOR_2A_FORWARD = 10;
 static const uint MOTOR_2A_BACKWARD = 11;
 static const uint MOTOR_2A_PWM = 12;
@@ -176,8 +176,8 @@ static void init_MOTORS() {
     gpio_init(MOTOR_3A_BACKWARD);
     gpio_init(MOTOR_3B_FORWARD);
     gpio_init(MOTOR_3B_BACKWARD);
-    gpio_init(DRIVER_1_OK);
-    gpio_init(DRIVER_2_OK);
+//    gpio_init(DRIVER_1_OK);
+//    gpio_init(DRIVER_2_OK);
     gpio_init(DRIVER_3_OK);
     gpio_set_dir(MOTOR_1A_FORWARD, GPIO_OUT);
     gpio_set_dir(MOTOR_1A_BACKWARD, GPIO_OUT);
@@ -191,8 +191,8 @@ static void init_MOTORS() {
     gpio_set_dir(MOTOR_3A_BACKWARD, GPIO_OUT);
     gpio_set_dir(MOTOR_3B_FORWARD, GPIO_OUT);
     gpio_set_dir(MOTOR_3B_BACKWARD, GPIO_OUT);
-    gpio_set_dir(DRIVER_1_OK, GPIO_OUT);
-    gpio_set_dir(DRIVER_2_OK, GPIO_OUT);
+//    gpio_set_dir(DRIVER_1_OK, GPIO_OUT);
+//    gpio_set_dir(DRIVER_2_OK, GPIO_OUT);
     gpio_set_dir(DRIVER_3_OK, GPIO_OUT);
     gpio_put(MOTOR_1A_FORWARD, 0);
     gpio_put(MOTOR_1A_BACKWARD, 0);
@@ -206,8 +206,8 @@ static void init_MOTORS() {
     gpio_put(MOTOR_3A_BACKWARD, 0);
     gpio_put(MOTOR_3B_FORWARD, 0);
     gpio_put(MOTOR_3B_BACKWARD, 0);
-    gpio_put(DRIVER_1_OK, 1);
-    gpio_put(DRIVER_2_OK, 1);
+//    gpio_put(DRIVER_1_OK, 1);
+//    gpio_put(DRIVER_2_OK, 1);
     gpio_put(DRIVER_3_OK, 1);
     uint slice_num_1A = pwm_gpio_to_slice_num(MOTOR_1A_PWM);
     uint slice_num_1B = pwm_gpio_to_slice_num(MOTOR_1B_PWM);
@@ -338,19 +338,30 @@ static void read_average_DC(uint16_t last) {
     if (context.mem[251] == 0x01) {
         N = (int)context.mem[252]; //how many points
         dt =(uint32_t)(context.mem[253]/N); //how long should wait
-    } 
-    uint32_t sum = 0;
+    }
+
+    uint32_t sum_A = 0;
+    uint32_t sum_V = 0;
     
     for (int i=0;i<N;i++) {
+        adc_select_input(2);
         last = adc_read();
-        sum+=(uint32_t)last;
+        sum_A+=(uint32_t)last;
+        adc_select_input(1);
+        last = adc_read();
+        sum_V+=(uint32_t)last;
         sleep_ms(dt);
     }
-    last =(uint16_t) (sum / N);
+    last =(uint16_t) (sum_A / N);
     context.mem[254] = (uint8_t)(last >> 8);
     context.mem[255] = (uint8_t)(last & 0xFF);
+    last =(uint16_t) (sum_V / N);
+    context.mem[238] = (uint8_t)(last >> 8);
+    context.mem[239] = (uint8_t)(last & 0xFF);
     //sleep_ms(500);
 }
+
+
 
 static void blink(int use_blink) {
     

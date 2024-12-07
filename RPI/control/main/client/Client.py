@@ -17,7 +17,7 @@ import yaml
 
 
 class Client:
-    FPS = 1
+    FPS = 30
     system_monitoring: SystemMonitoring | None
     input_handler: InputHandler | None
     network: ClientNetwork | None
