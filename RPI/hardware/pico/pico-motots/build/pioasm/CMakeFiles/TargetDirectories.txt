@@ -1,3 +1,0 @@
-/home/master/DEVELOPMENT/pico/pico-motots/build/pioasm/CMakeFiles/pioasm.dir
-/home/master/DEVELOPMENT/pico/pico-motots/build/pioasm/CMakeFiles/edit_cache.dir
-/home/master/DEVELOPMENT/pico/pico-motots/build/pioasm/CMakeFiles/rebuild_cache.dir
