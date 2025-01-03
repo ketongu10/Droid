@@ -115,74 +115,86 @@ static void read_MINDSTORM_encoders(uint forward, uint backward) {
                 ticks = 0;
             }
         }
-        context.mem[254] = (uint8_t)(ind & 0xFF);
+        context.mem[239] = (uint8_t)(ind & 0xFF);
+        context.mem[254] = (uint8_t)(position_in_degrees >> 8);
         context.mem[255] = (uint8_t)(position_in_degrees & 0xFF);
-        sleep_ms(10);
+        sleep_ms(0.5);
     }
 }
 
-struct Mencoder{
+
+typedef struct {
     uint forward;
     uint backward;
     bool started;
     uint ticks;
     long position_in_degrees;
+    uint buf_ind;
+} Mencoder;
 
-};
+ static void read_MINDSTORM_encoder(Mencoder* encoder) {
+     bool f = gpio_get(encoder->forward);
+     bool b = gpio_get(encoder->backward);
+     if (!encoder->started) {
+         if (f && b) {
+             encoder->started = true;
+         }
+     } else {
+         encoder->ticks+=1;
+         if (f && !b && encoder->ticks >= MIN_TICKS_SINCE_STARTED) {
+             encoder->position_in_degrees+=DELTA;
+             encoder->started = false;
+             encoder->ticks = 0;
+         }
+         if (!f && b && encoder->ticks >= MIN_TICKS_SINCE_STARTED) {
+             encoder->position_in_degrees-=DELTA;
+             encoder->started = false;
+             encoder->ticks = 0;
+         }
 
+         context.mem[encoder->buf_ind-1] = (uint8_t)(encoder->position_in_degrees >> 8);
+         context.mem[encoder->buf_ind] = (uint8_t)(encoder->position_in_degrees & 0xFF);
+     }
 
-// static void read_MINDSTORM_encoder(Mencoder* encoder) {
-//     f = gpio_get(encoder->forward);
-//     b = gpio_get(encoder->backward);
-//     if (!encoder->started) {
-//         if (f && b) {
-//             encoder->started = true;
-//         }
-//     } else {
-//         encoder->ticks+=1;
-//         if (f && !b && encoder->ticks >= MIN_TICKS_SINCE_STARTED) {
-//             encoder->position_in_degrees+=DELTA;
-//             encoder->started = false;
-//             encoder->ticks = 0;
-//         }
-//         if (!f && b && encoder->ticks >= MIN_TICKS_SINCE_STARTED) {
-//             encoder->position_in_degrees-=DELTA;
-//             encoder->started = false;
-//             encoder->ticks = 0;
-//         }
-//     }
+ }
 
-// }
-
-
-static const uint MENCODER_FORWARD = 2;
-static const uint MENCODER_BACKWARD = 3;
+// MINDSTORMS
+static const uint MENCODER_FORWARD_1 = 2;
+static const uint MENCODER_BACKWARD_1 = 3;
+static const uint MENCODER_FORWARD_2 = 0;
+static const uint MENCODER_BACKWARD_2 = 1;
 
 
 
 
 static void init_gpios() {
-    gpio_init(MENCODER_FORWARD);
-    gpio_init(MENCODER_BACKWARD);
-    gpio_set_dir(MENCODER_FORWARD, GPIO_IN);
-    gpio_set_dir(MENCODER_BACKWARD, GPIO_IN);
+    gpio_init(MENCODER_FORWARD_1);
+    gpio_init(MENCODER_BACKWARD_1);
+    gpio_set_dir(MENCODER_FORWARD_1, GPIO_IN);
+    gpio_set_dir(MENCODER_BACKWARD_1, GPIO_IN);
+    gpio_init(MENCODER_FORWARD_2);
+    gpio_init(MENCODER_BACKWARD_2);
+    gpio_set_dir(MENCODER_FORWARD_2, GPIO_IN);
+    gpio_set_dir(MENCODER_BACKWARD_2, GPIO_IN);
 }
 
 
 
-
-
-
-
-static struct Mencoder enc1 = {0, 0, false, 0, 0};
+Mencoder enc1 = {MENCODER_FORWARD_1, MENCODER_BACKWARD_1, false, 0, 0, 255};
+Mencoder enc2 = {MENCODER_FORWARD_2, MENCODER_BACKWARD_2, false, 0, 0, 255-16};
 
 int main() {
     stdio_init_all();
     init_gpios();
     setup_slave();
-    read_MINDSTORM_encoders(MENCODER_FORWARD, MENCODER_BACKWARD);
-    // while (1) {
-    //     read_MINDSTORM_encoder(&enc1);
-    // }
+
+    context.mem[127] = 11;
+//    read_MINDSTORM_encoders(MENCODER_FORWARD, MENCODER_BACKWARD);
+    while (1) {
+        read_MINDSTORM_encoder(&enc1);
+        read_MINDSTORM_encoder(&enc2);
+
+        sleep_ms(0.5);
+    }
 
 }

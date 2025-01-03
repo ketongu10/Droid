@@ -1,6 +1,7 @@
 from enum import Enum
 
 from RPI.control.main.monitoring.Debugger import Debugger
+from RPI.control.main.monitoring.SystemMonitoring import SystemMonitoring
 from RPI.control.main.server.hardware.Interfaces.IDevice import IDevice
 from RPI.control.main.server.hardware.Interfaces.IExecuteOrders import IExecuteOrders
 from RPI.control.main.server.hardware.Interfaces.IUseI2C import IUseI2C
@@ -43,10 +44,32 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
     SPEEDS = [0, 86, 127, 200, 255]
 
     def __init__(self,  bus, adr, is_right_arm=True):
-        super().__init__(bus, adr)
+        super().__init__(bus, adr[0])
+        self.encoder_malina_adr = adr[1]
         self.mode = "______"
         self.right_arm = is_right_arm
         self.arm_speed = 2
+
+    def is_available(self):
+
+        motion_is_ok = False
+        encoder_is_ok = False
+
+        try:
+            self.bus.read_byte_data(self.malina_adr, IUseI2C.DEFAULT_CHECK_POINT)
+            motion_is_ok = True
+        except Exception as e:
+            Debugger.RED().print(f'{"right" if self.right_arm else "left"} '
+                                 f'arm motion malina {self.malina_adr} is not available')
+
+        try:
+            self.bus.read_byte_data(self.encoder_malina_adr, IUseI2C.DEFAULT_CHECK_POINT)
+            encoder_is_ok = True
+        except Exception as e:
+            Debugger.RED().print(f'{"right" if self.right_arm else "left"} '
+                                 f'arm encoder malina {self.encoder_malina_adr} is not available')
+
+        return motion_is_ok and encoder_is_ok
 
     def move_i_motor(self, i, motion: Motions, pwm_level):
         self.bus.write_byte_data(self.malina_adr, ArmController.motor_table[i].motion_adr, motion.value)
@@ -79,6 +102,21 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
                     self.move_i_motor(i, Motions.get_by_code(directives[i]), ArmController.SPEEDS[self.arm_speed])
             if should_change:
                 self.mode = directives
+
+    def get_angle_by_bufpos(self, bufpos):
+        ret = (self.bus.read_byte_data(self.encoder_malina_adr, bufpos-1) * 255 +
+               self.bus.read_byte_data(self.encoder_malina_adr, bufpos)) % 360
+
+        return ret
+
+
+    def carry_out_measurements(self, subscribers: SystemMonitoring) -> None:
+        if self.right_arm:
+            subscribers.body.right_arm.forearm_forward.angle = self.get_angle_by_bufpos(0xff)
+            subscribers.body.right_arm.shoulder_forward.angle = self.get_angle_by_bufpos(0xff-16)
+        else:
+            subscribers.body.left_arm.forearm_forward.angle = self.get_angle_by_bufpos(0xff)
+            subscribers.body.left_arm.shoulder_forward.angle = self.get_angle_by_bufpos(0xff-16)
 
     def finalize(self):
         for i in range(6):

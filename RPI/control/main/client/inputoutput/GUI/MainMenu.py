@@ -11,10 +11,12 @@ from RPI.control.project_settings import RUNS, RESOURCES
 class MainMenu:
     def __init__(self, main_screen, sys_mon: SystemMonitoring):
         self.screen = main_screen
+        self.sys_mon = sys_mon
         self.manager = pygame_gui.UIManager((1280, 768))
         self.managers_list = [self]
         self.is_active = True
         LEFT_POS = 800
+        MID_POS = 950
         settings = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((LEFT_POS, 25), (100, 50)), text='Settings', manager=self.manager, object_id='#button1')
         self.buttons = {settings: self.open_settings}
         self.settings_manager = BaseManager(self, self.managers_list,
@@ -22,6 +24,10 @@ class MainMenu:
                                              'trucks': {
                                                  "left_truck": sys_mon.body.trucks.left_truck_VA,
                                                  "right_truck": sys_mon.body.trucks.right_truck_VA
+                                             },
+                                             'right_arm': {
+                                                 "shoulder_forward": sys_mon.body.right_arm.shoulder_forward.angle,
+                                                 "forearm_forward": sys_mon.body.right_arm.forearm_forward.angle,
                                              }
                                              })#SettingsMenu(self)
 
@@ -32,6 +38,10 @@ class MainMenu:
         trucks = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 550), (100, 50)), html_text='2nd speed', manager=self.manager)
         arms = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 600), (100, 50)), html_text='2nd speed', manager=self.manager)
         self.fps = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 650), (100, 50)), html_text=f'{Profiler.subscribers["system_ping"]}', manager=self.manager)
+
+
+        self.shoulder_forward = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 600), (200, 50)), html_text=f'shoulder_forward: {sys_mon.body.right_arm.shoulder_forward.angle:.01f}', manager=self.manager)
+        self.forearm_forward = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 650), (200, 50)), html_text=f'forearm_forward: {sys_mon.body.right_arm.forearm_forward.angle:.01f}', manager=self.manager)
 
         sprite_list = pygame.sprite.Group()
         self.battery_sprite = EnergySprite(sprite_list, pos=(LEFT_POS, 700))
@@ -62,6 +72,8 @@ class MainMenu:
             self.battery.bar_filled_colour = (int(255 * (1 - perc) ** 2), int(255*perc**2), 0)
             self.battery_label.set_text(f'{self.battery_sprite.get_percentage()*100:0.1f}%')
             self.fps.set_text(f'{Profiler.subscribers["rec_time"]}')
+            self.shoulder_forward.set_text(f'shoulder_forward: {self.sys_mon.body.right_arm.shoulder_forward.angle:.01f}')
+            self.forearm_forward.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.forearm_forward.angle:.01f}')
             self.manager.update(ticks)
 
     def draw_ui(self, surface: pygame.surface.Surface):
@@ -102,13 +114,9 @@ class SettingsMenu:
 
         sprite_list = pygame.sprite.Group()
         self.battery_sprite = EnergySprite(sprite_list, pos=(LEFT_POS, 700))
-        #self.battery = pygame_gui.elements.UIStatusBar(pygame.Rect((LEFT_POS, 700), (450, 50)), self.manager, sprite=self.battery_sprite, percent_method=self.battery_sprite.get_percentage)
         self.battery_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((LEFT_POS, 700), (450, 50)),
                                                     text=f'{self.battery_sprite.get_percentage()*100:0.1f}%',
                                                     manager=self.manager)
-        #self.toggle = pygame_gui.elements.UI2DSlider(pygame.Rect((LEFT_POS, 700), (450, 50)), 0.5, (0.6, 0.7), 0.5, (0.6, 0.7), manager=self.manager)
-        #self.toggle.scroll_position
-        #self.scr = pygame_gui.elements.UIScrollingContainer(pygame.Rect((LEFT_POS, 200), (550, 450)), manager=self.manager)
         fps = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 650), (100, 50)), html_text='60 fps', manager=self.manager) #, container=self.scr)
 
         current = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 500), (100, 50)), html_text='0 A', manager=self.manager) #, container=self.scr)
@@ -126,6 +134,10 @@ class SettingsMenu:
         # self.battery.bar_filled_colour = (0, 255, 0)
         # self.battery.border_colour = (128, 128, 0)
         # self.battery.bar_unfilled_colour = (78, 78, 78)
+        #self.toggle = pygame_gui.elements.UI2DSlider(pygame.Rect((LEFT_POS, 700), (450, 50)), 0.5, (0.6, 0.7), 0.5, (0.6, 0.7), manager=self.manager)
+        #self.toggle.scroll_position
+        #self.scr = pygame_gui.elements.UIScrollingContainer(pygame.Rect((LEFT_POS, 200), (550, 450)), manager=self.manager)
+        #self.battery = pygame_gui.elements.UIStatusBar(pygame.Rect((LEFT_POS, 700), (450, 50)), self.manager, sprite=self.battery_sprite, percent_method=self.battery_sprite.get_percentage)
 
 
 

@@ -39,10 +39,10 @@ class Trucks(IPhysicalDevice):
 
 class Arm(IPhysicalDevice):
     def __init__(self, side):
-        self.shoulder_forward = Joint(side)  # большой белый мотор толкающий всю руку впере
+        self.shoulder_forward = Joint(side)  # большой белый мотор толкающий всю руку вперед
         self.shoulder_side = Joint(side)     # редкий мотор поднимающий всю руку в бок
         self.elbow_side = Joint(side)        # стандартный мотор вращающий локоть вдоль своей оси
-        self.forearm_forward = Joint(side)   # большой мотор сгибающий руку в локте
+        self.forearm_forward = Joint(side)   # большой белый мотор сгибающий руку в локте
         self.forearm_side = Joint(side)      # стандартный мотор вращающий предплечье вдоль своей оси
         self.hand = Joint(side)              # стандартный мотор открывающий клешню
 

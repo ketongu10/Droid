@@ -13,7 +13,7 @@ def init_subscribers(side=Side.Client):
         Debugger.setup_output(RUNS/f"client/{str(datetime.now().time()).replace(':', '-')}.txt")
         Debugger.subscribers = [
             #'AbstractStream.to_bytes',
-            'AbstractStream.from_bytes',
+            #'AbstractStream.from_bytes',
             'AbstractStream.maintain_fps',
             'VideoStream.read_from_video_stream',
             'SystemStream.change_speeds',

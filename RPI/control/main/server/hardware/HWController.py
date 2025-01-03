@@ -14,8 +14,8 @@ from RPI.control.main.server.hardware.Orders import Orders
 
 class HWController(AbstractStream):
 
-    RIGHT_ARM_MALINA_ADR = 0x17
-    LEFT_ARM_MALINA_ADR = 0x18
+    RIGHT_ARM_MALINA_ADR = 0x17, 0x27
+    LEFT_ARM_MALINA_ADR = 0x18, 0x28
 
     ACCUMULATOR_ADR = 0x17
 
@@ -69,7 +69,7 @@ class HWController(AbstractStream):
                     if self.right_arm_is_available:
                         self.working_devices.append(self.right_arm)
 
-                    self.left_arm = ArmController(self.i2c_bus, HWController.LEFT_ARM_MALINA_ADR)
+                    self.left_arm = ArmController(self.i2c_bus, HWController.LEFT_ARM_MALINA_ADR, is_right_arm=False)
                     self.left_arm_is_available = self.left_arm.is_available()
                     if self.left_arm_is_available:
                         self.working_devices.append(self.left_arm)
@@ -102,8 +102,9 @@ class HWController(AbstractStream):
                 device.execute_orders(self.orders)
                 device.carry_out_measurements(self.system_monitoring)
 
-        self.system_monitoring.accumulator.A.update_buffer(np.random.uniform())
-        self.system_monitoring.accumulator.V.update_buffer(1.5*np.random.uniform())
+        # self.system_monitoring.accumulator.A.update_buffer(np.random.uniform())
+        # self.system_monitoring.accumulator.V.update_buffer(1.5*np.random.uniform())
+        # self.system_monitoring.body.right_arm.forearm_forward.angle = 1.5*np.random.uniform()
         self.system_monitoring.update_subscribers()
 
     def finalize(self):
