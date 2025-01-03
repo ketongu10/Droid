@@ -33,7 +33,8 @@ class MainMenu:
 
 
 
-        current = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 500), (100, 50)), html_text='0 A', manager=self.manager)
+        self.current = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 500), (100, 50)), html_text=f'{sys_mon.accumulator.A} A', manager=self.manager)
+        self.voltage = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 500), (100, 50)), html_text=f'{sys_mon.accumulator.V} V', manager=self.manager)
 
         trucks = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 550), (100, 50)), html_text='2nd speed', manager=self.manager)
         arms = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 600), (100, 50)), html_text='2nd speed', manager=self.manager)
@@ -44,7 +45,7 @@ class MainMenu:
         self.forearm_forward = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 650), (200, 50)), html_text=f'forearm_forward: {sys_mon.body.right_arm.forearm_forward.angle:.01f}', manager=self.manager)
 
         sprite_list = pygame.sprite.Group()
-        self.battery_sprite = EnergySprite(sprite_list, pos=(LEFT_POS, 700))
+        self.battery_sprite = EnergySprite(self.sys_mon, sprite_list, pos=(LEFT_POS, 700))
         self.battery = pygame_gui.elements.UIStatusBar(pygame.Rect((LEFT_POS, 700), (450, 50)), self.manager, sprite=self.battery_sprite, percent_method=self.battery_sprite.get_percentage)
         self.battery_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((LEFT_POS, 700), (450, 50)),
                                                     text=f'{self.battery_sprite.get_percentage()*100:0.1f}%',
@@ -68,12 +69,19 @@ class MainMenu:
 
     def update(self, ticks: float):
         if self.is_active:
+            self.battery_sprite.update_()
             perc = self.battery_sprite.get_percentage()
             self.battery.bar_filled_colour = (int(255 * (1 - perc) ** 2), int(255*perc**2), 0)
             self.battery_label.set_text(f'{self.battery_sprite.get_percentage()*100:0.1f}%')
+
+            self.current.set_text(f'{self.sys_mon.accumulator.A.last_values[-10:].mean():0.3f} A')
+            self.voltage.set_text(f'{self.sys_mon.accumulator.V} V')
+
             self.fps.set_text(f'{Profiler.subscribers["rec_time"]}')
+
             self.shoulder_forward.set_text(f'shoulder_forward: {self.sys_mon.body.right_arm.shoulder_forward.angle:.01f}')
             self.forearm_forward.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.forearm_forward.angle:.01f}')
+
             self.manager.update(ticks)
 
     def draw_ui(self, surface: pygame.surface.Surface):

@@ -36,6 +36,9 @@ class AbstractMonitor:
     def get_info(self):
         return self.shm.name, self.min, self.max
 
+    def __str__(self):
+        return f"{self.last_values[-1]:.02f}"
+
     @staticmethod
     def get_unique_name():
         AbstractMonitor.unique_name += 1

@@ -12,7 +12,7 @@ from RPI.control.main.network.Side import Side
 class SystemMonitoring(IPhysicalDevice):
     def __init__(self, side=Side.Client):
 
-        self.accumulator = VACharacteristics(100, side=side)
+        self.accumulator = VACharacteristics(100, V_bounds=(0, 20), A_bounds=(0, 3), side=side)
         self.body = BodyPosition(side)
         self.subscribers = self.get_subscribers()
 
