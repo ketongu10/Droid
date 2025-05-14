@@ -5,6 +5,7 @@ import time
 import io
 import numpy as np
 
+from RPI.control.main.monitoring.Profiler import Profiler
 from RPI.control.main.network.AbstractStream import AbstractStream
 from RPI.control.main.server.hardware.Interfaces.IDevice import IDevice
 
@@ -18,7 +19,7 @@ class CameraController(AbstractStream, IDevice):
 
     def __init__(self, cfg):
         self.picam2 = Picamera2()
-        self.camera_config = self.picam2.create_still_configuration(main={"size": [int(cfg["IMAGE_SIZE"])]*2},
+        self.camera_config = self.picam2.create_video_configuration(main={"size": [int(cfg["IMAGE_SIZE"])]*2},
                                                                     lores={"size": [int(cfg["IMAGE_SIZE"])]*2},
                                                                     display=None,
                                                                     colour_space=ColorSpace.Sycc()
@@ -26,6 +27,8 @@ class CameraController(AbstractStream, IDevice):
         self.picam2.configure(self.camera_config)
         self.picam2.start()
 
+
+    @Profiler.register("CameraController.get_view")
     def _get_view(self):
         image_data = io.BytesIO()
         self.picam2.capture_file(image_data, format='jpeg')

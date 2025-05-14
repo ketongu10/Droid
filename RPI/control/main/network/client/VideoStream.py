@@ -53,7 +53,6 @@ class VideoStream(AbstractStream):
                     new_msg = True
                     Debugger.print(f"RECEIVING TIME={time() - t0_rec}, MESSAGE LEN={msglen}")
                     Profiler.profile({"rec_time": (time() - t0_rec) * 1000})
-                    print((time() - t0_rec) * 1000)
                     self.received_data = full_msg[VideoStream.HEADER_SIZE:]
                     break
                 elif len(full_msg) - VideoStream.HEADER_SIZE > msglen:

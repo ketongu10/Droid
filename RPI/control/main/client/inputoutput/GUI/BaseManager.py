@@ -35,21 +35,21 @@ class OpenMonitoring(Activator):
         if self.is_opened:
             print('closing')
             self.button.colours['normal_bg'] = pygame.Color(76, 80, 82, 255)
-            if self.process.is_alive():
-                self.process.terminate()
+            self.device.on_deactivate_viewer()
+
         else:
             print(f'activated {self.key}')
             self.button.colours['normal_text'] = pygame.Color(255, 0, 0, 255) #(76, 80, 82, 255)]
             print(self.button.colours)
-            self.process = Process(target=self.device.start_monitoring_process, args=(self.key, self.device.get_info(), ))
-            self.process.start()
+            self.process = self.device.on_activate_viewer(self.key)
 
         self.is_opened = not self.is_opened
 
     def update(self) -> None:
-        if self.is_opened:
-            if not self.process.is_alive():
-                print('SSSSSS')
+        if self.is_opened and self.device.view_process:
+            if not self.device.check_alive_viewer():
+                self.is_opened = False
+                print('Closed')
 
 
 class OpenManager(Activator):

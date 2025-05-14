@@ -3,6 +3,7 @@ import pygame.display
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing.shared_memory import SharedMemory
+from multiprocessing import Process
 from time import sleep, time
 from RPI.control.main.network.Side import Side
 from RPI.control.project_settings import RESOURCES, SHM_CLIENT_SYSSTR_TIME
@@ -123,6 +124,16 @@ class VACharacteristics(IPhysicalDevice):
             i += 1
             print((time() - t0))
             plt.pause(0.0005)
+
+
+    def on_activate_viewer(self, key):
+        self.view_process = Process(target=self.start_monitoring_process, args=(key, self.get_info(),))
+        self.view_process.start()
+
+    def on_deactivate_viewer(self):
+        if self.view_process.is_alive():
+            self.view_process.terminate()
+
 
 if __name__ == "__main__":
     screen = pygame.display.set_mode((1280, 768))

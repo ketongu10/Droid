@@ -1,7 +1,9 @@
-
+from multiprocessing import Process
 
 class IPhysicalDevice:
 
+
+    view_process = None
 
     def set_subscription_values(self, parameters: dict):
         for key, value in parameters.items():
@@ -22,8 +24,10 @@ class IPhysicalDevice:
 
     def get_info(self) -> tuple: ...
 
-    @staticmethod
-    def start_monitoring_process(args) -> None:
-        print('ne sasat')
+    def on_activate_viewer(self, key): ...
 
+    def on_deactivate_viewer(self): ...
 
+    def check_alive_viewer(self):
+        """RETURNS True if alive"""
+        return self.view_process.is_alive()

@@ -33,9 +33,6 @@ class VideoStream(AbstractStream):
                 data = json.loads(data.decode('utf-8'))
                 if data["title"] == "get_image":
                     self.connection.sendall(self.get_view())
-                    """conn.sendall(bytes(json.dumps({
-                         "response": self.players
-                     }), 'UTF-8'))"""
             except Exception as e:
                 Debugger.RED().print(f"ServerVideoStream: {e}")
                 self.server_network.abort_received = True

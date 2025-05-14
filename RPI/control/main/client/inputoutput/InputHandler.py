@@ -47,7 +47,6 @@ class InputHandler:
 
 
     def __init__(self, main_menu):
-        self.SPEEDS = {"trucks": 2, "arm": 2}
         self.SPEEDS_TIMER = {"trucks": 0, "arm": 0}
         self.main_menu: MainMenu = main_menu
 
@@ -65,6 +64,10 @@ class InputHandler:
                     InputHandler.IS_PRESSED[movement_name] = False
 
             self.main_menu.process_events_all(event)
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_TAB:
+                    self.main_menu.CONTROL_MODE *= -1
 
             if event.type == pygame.QUIT:  # Проверяем на выход из игры
                 return {"status": "Quit"}
@@ -119,13 +122,13 @@ class InputHandler:
             self.SPEEDS_TIMER["trucks"] = 0
 
         if self.SPEEDS_TIMER["trucks"] == 1 and InputHandler.IS_PRESSED["trucks_speed_up"] and not InputHandler.IS_PRESSED[
-            "trucks_speed_down"] and self.SPEEDS["trucks"] < 4:
-            self.SPEEDS["trucks"] += 1
-            speed_mode = str(self.SPEEDS["trucks"]) + str(self.SPEEDS["arm"])
+            "trucks_speed_down"] and self.main_menu.SPEEDS["trucks"] < 4:
+            self.main_menu.SPEEDS["trucks"] += 1
+            speed_mode = str(self.main_menu.SPEEDS["trucks"]) + str(self.main_menu.SPEEDS["arm"])
         elif self.SPEEDS_TIMER["trucks"] == 1 and not InputHandler.IS_PRESSED["trucks_speed_up"] and InputHandler.IS_PRESSED[
-            "trucks_speed_down"] and self.SPEEDS["trucks"] > 0:
-            self.SPEEDS["trucks"] -= 1
-            speed_mode = str(self.SPEEDS["trucks"]) + str(self.SPEEDS["arm"])
+            "trucks_speed_down"] and self.main_menu.SPEEDS["trucks"] > 0:
+            self.main_menu.SPEEDS["trucks"] -= 1
+            speed_mode = str(self.main_menu.SPEEDS["trucks"]) + str(self.main_menu.SPEEDS["arm"])
 
         if InputHandler.IS_PRESSED["arm_speed_up"] or InputHandler.IS_PRESSED["arm_speed_down"]:
             self.SPEEDS_TIMER["arm"] += 1
@@ -133,13 +136,13 @@ class InputHandler:
             self.SPEEDS_TIMER["arm"] = 0
 
         if self.SPEEDS_TIMER["arm"] == 1 and InputHandler.IS_PRESSED["arm_speed_up"] and not InputHandler.IS_PRESSED[
-            "arm_speed_down"] and self.SPEEDS["arm"] < 4:
-            self.SPEEDS["arm"] += 1
-            speed_mode = str(self.SPEEDS["trucks"]) + str(self.SPEEDS["arm"])
+            "arm_speed_down"] and self.main_menu.SPEEDS["arm"] < 4:
+            self.main_menu.SPEEDS["arm"] += 1
+            speed_mode = str(self.main_menu.SPEEDS["trucks"]) + str(self.main_menu.SPEEDS["arm"])
         elif self.SPEEDS_TIMER["arm"] == 1 and not InputHandler.IS_PRESSED["arm_speed_up"] and InputHandler.IS_PRESSED[
-            "arm_speed_down"] and self.SPEEDS["arm"] > 0:
-            self.SPEEDS["arm"] -= 1
-            speed_mode = str(self.SPEEDS["trucks"]) + str(self.SPEEDS["arm"])
+            "arm_speed_down"] and self.main_menu.SPEEDS["arm"] > 0:
+            self.main_menu.SPEEDS["arm"] -= 1
+            speed_mode = str(self.main_menu.SPEEDS["trucks"]) + str(self.main_menu.SPEEDS["arm"])
 
         return {"trucks_movements": trucks_move_command,
                 "arm_movements": arm_move,

@@ -1,26 +1,42 @@
+from enum import Enum
+
 import pygame, pygame_gui
 import sys
 
 from RPI.control.main.client.inputoutput.GUI.BaseManager import BaseManager
 from RPI.control.main.client.inputoutput.GUI.Utils import EnergySprite
+from RPI.control.main.client.inputoutput.Subproc.PosViewer import PosViewer
 from RPI.control.main.monitoring.Profiler import Profiler
 from RPI.control.main.monitoring.SystemMonitoring import SystemMonitoring
 from RPI.control.project_settings import RUNS, RESOURCES
 
 
+
+
+
 class MainMenu:
     def __init__(self, main_screen, sys_mon: SystemMonitoring):
+        # Links to connected classes
         self.screen = main_screen
         self.sys_mon = sys_mon
+
+        # for input handler
+        self.SPEEDS = {"trucks": 2, "arm": 2}
+        self.CONTROL_MODE = ControlMode.MANUAL
+
+        # Managers
         self.manager = pygame_gui.UIManager((1280, 768))
         self.managers_list = [self]
         self.is_active = True
+
+        # Labeling and buttons
         LEFT_POS = 800
         MID_POS = 950
         settings = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((LEFT_POS, 25), (100, 50)), text='Settings', manager=self.manager, object_id='#button1')
         self.buttons = {settings: self.open_settings}
         self.settings_manager = BaseManager(self, self.managers_list,
-                                            {'accumulator': sys_mon.accumulator,
+                                            {'PosViewer': PosViewer(),
+                                             'accumulator': sys_mon.accumulator,
                                              'trucks': {
                                                  "left_truck": sys_mon.body.trucks.left_truck_VA,
                                                  "right_truck": sys_mon.body.trucks.right_truck_VA
@@ -36,9 +52,9 @@ class MainMenu:
         self.current = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 500), (100, 50)), html_text=f'{sys_mon.accumulator.A} A', manager=self.manager)
         self.voltage = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 500), (100, 50)), html_text=f'{sys_mon.accumulator.V} V', manager=self.manager)
 
-        trucks = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 550), (100, 50)), html_text='2nd speed', manager=self.manager)
-        arms = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 600), (100, 50)), html_text='2nd speed', manager=self.manager)
-        self.fps = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 650), (100, 50)), html_text=f'{Profiler.subscribers["system_ping"]}', manager=self.manager)
+        self.trucks_speed = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 550), (100, 50)), html_text='2nd speed', manager=self.manager)
+        self.arms_speed = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 600), (100, 50)), html_text='2nd speed', manager=self.manager)
+        self.fps = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 650), (100, 80)), html_text=f'{Profiler.subscribers["system_ping"]}', manager=self.manager)
 
 
         self.shoulder_forward = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 600), (200, 50)), html_text=f'shoulder_forward: {sys_mon.body.right_arm.shoulder_forward.angle:.01f}', manager=self.manager)
@@ -55,6 +71,8 @@ class MainMenu:
         self.battery.bar_filled_colour = (0, 255, 0)
         self.battery.border_colour = (128, 128, 0)
         self.battery.bar_unfilled_colour = (78, 78, 78)
+
+
 
 
 
@@ -77,7 +95,10 @@ class MainMenu:
             self.current.set_text(f'{self.sys_mon.accumulator.A.last_values[-10:].mean():0.3f} A')
             self.voltage.set_text(f'{self.sys_mon.accumulator.V} V')
 
-            self.fps.set_text(f'{Profiler.subscribers["rec_time"]}')
+            self.fps.set_text(f'{Profiler.subscribers["rec_time"]} | {Profiler.subscribers["system_ping"]}')
+
+            self.trucks_speed.set_text(f'{self.SPEEDS["trucks"]}th speed')
+            self.arms_speed.set_text(f'{self.SPEEDS["arm"]}th speed')
 
             self.shoulder_forward.set_text(f'shoulder_forward: {self.sys_mon.body.right_arm.shoulder_forward.angle:.01f}')
             self.forearm_forward.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.forearm_forward.angle:.01f}')
@@ -183,6 +204,14 @@ class SettingsMenu:
     def open_settings(self):
         print('LOH')
         #print(self.toggle.scroll_position)
+
+
+class ControlMode(Enum):
+    MANUAL = -1
+    DIGITAL = 1
+
+
+
 
 
 if __name__ == "__main__":
