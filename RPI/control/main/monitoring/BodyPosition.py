@@ -1,5 +1,12 @@
-from RPI.control.main.monitoring.AbstractMonitoring import VACharacteristics
+
+import matplotlib.pyplot as plt
+from multiprocessing.shared_memory import SharedMemory
+from multiprocessing import Process
+import numpy as np
+from time import time
+from RPI.control.main.monitoring.AbstractMonitoring import VACharacteristics, AbstractMonitor
 from RPI.control.main.monitoring.IPhysicalDevice import IPhysicalDevice
+from RPI.control.project_settings import RESOURCES, SHM_CLIENT_SYSSTR_TIME
 
 
 class Vector3:
@@ -10,9 +17,25 @@ class Vector3:
 
 class Joint(IPhysicalDevice):
     def __init__(self, side):
-        self.angle = 0
-        self.angular_speed = 0
-        self.VA = VACharacteristics(100, side=side)
+        self.angle = AbstractMonitor(100, (0, 1), side=side)
+        self.angular_speed = AbstractMonitor(100, (-1, 1), side=side)
+        self.VA = VACharacteristics(100, (-16, 16), side=side)
+
+
+    def get_subscribers(self) -> dict:
+        return {"angle": float(self.angle.last_values[-1]),
+                "angular_speed": float(self.angular_speed.last_values[-1]),
+                "VA": self.VA.get_subscribers()}
+
+    def set_subscription_values(self, parameters: dict):
+        self.angle.update_buffer(parameters["angle"])
+        self.angular_speed.update_buffer(parameters["angular_speed"])
+        self.VA.set_subscription_values(parameters["VA"])
+
+    def get_info(self) -> tuple:
+        return (*self.angle.get_info(), 'angle'), (*self.angular_speed.get_info(), 'angular_speed'), (*self.VA.V.get_info(), 'V')
+
+
 
 
 class Trucks(IPhysicalDevice):

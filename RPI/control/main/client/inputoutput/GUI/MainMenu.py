@@ -4,6 +4,7 @@ import pygame, pygame_gui
 import sys
 
 from RPI.control.main.client.inputoutput.GUI.BaseManager import BaseManager
+from RPI.control.main.client.inputoutput.GUI.DigitalManager import DigitalManager
 from RPI.control.main.client.inputoutput.GUI.Utils import EnergySprite
 from RPI.control.main.client.inputoutput.Subproc.PosViewer import PosViewer
 from RPI.control.main.monitoring.Profiler import Profiler
@@ -22,7 +23,6 @@ class MainMenu:
 
         # for input handler
         self.SPEEDS = {"trucks": 2, "arm": 2}
-        self.CONTROL_MODE = ControlMode.MANUAL
 
         # Managers
         self.manager = pygame_gui.UIManager((1280, 768))
@@ -35,17 +35,17 @@ class MainMenu:
         settings = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((LEFT_POS, 25), (100, 50)), text='Settings', manager=self.manager, object_id='#button1')
         self.buttons = {settings: self.open_settings}
         self.settings_manager = BaseManager(self, self.managers_list,
-                                            {'PosViewer': PosViewer(),
+                                            {'PosViewer': PosViewer(self.sys_mon),
                                              'accumulator': sys_mon.accumulator,
                                              'trucks': {
                                                  "left_truck": sys_mon.body.trucks.left_truck_VA,
                                                  "right_truck": sys_mon.body.trucks.right_truck_VA
                                              },
                                              'right_arm': {
-                                                 "shoulder_forward": sys_mon.body.right_arm.shoulder_forward.angle,
-                                                 "forearm_forward": sys_mon.body.right_arm.forearm_forward.angle,
+                                                 "hand": sys_mon.body.right_arm.hand,
+                                                 # "forearm_forward": sys_mon.body.right_arm.forearm_forward,
                                              }
-                                             })#SettingsMenu(self)
+                                             })
 
 
 
@@ -57,8 +57,16 @@ class MainMenu:
         self.fps = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 650), (100, 80)), html_text=f'{Profiler.subscribers["system_ping"]}', manager=self.manager)
 
 
-        self.shoulder_forward = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 600), (200, 50)), html_text=f'shoulder_forward: {sys_mon.body.right_arm.shoulder_forward.angle:.01f}', manager=self.manager)
-        self.forearm_forward = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 650), (200, 50)), html_text=f'forearm_forward: {sys_mon.body.right_arm.forearm_forward.angle:.01f}', manager=self.manager)
+        self.shoulder_forward = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 400), (200, 50)), html_text=f'shoulder_forward: {sys_mon.body.right_arm.shoulder_forward.angle}', manager=self.manager)
+        self.shoulder_side = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 450), (200, 50)), html_text=f'shoulder_side: {sys_mon.body.right_arm.shoulder_side.angle}', manager=self.manager)
+        self.elbow_side = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 500), (200, 50)), html_text=f'elbow_side: {sys_mon.body.right_arm.elbow_side.angle}', manager=self.manager)
+        self.forearm_forward = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 550), (200, 50)), html_text=f'forearm_forward: {sys_mon.body.right_arm.forearm_forward.angle}', manager=self.manager)
+        self.forearm_side = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 600), (200, 50)), html_text=f'forearm_side: {sys_mon.body.right_arm.forearm_side.angle}', manager=self.manager)
+        self.hand = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((MID_POS, 650), (200, 50)), html_text=f'hand: {sys_mon.body.right_arm.hand.angle}', manager=self.manager)
+
+
+
+
 
         sprite_list = pygame.sprite.Group()
         self.battery_sprite = EnergySprite(self.sys_mon, sprite_list, pos=(LEFT_POS, 700))
@@ -66,6 +74,19 @@ class MainMenu:
         self.battery_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((LEFT_POS, 700), (450, 50)),
                                                     text=f'{self.battery_sprite.get_percentage()*100:0.1f}%',
                                                     manager=self.manager)
+
+
+        # MODE CONTROL
+        self.CONTROL_MODE = ControlMode.MANUAL
+        dropdown_options = [str(member.value) for member in ControlMode]
+        self.mode_button = pygame_gui.elements.UIDropDownMenu(relative_rect=pygame.Rect((MID_POS, 25), (100, 50)),
+                                           starting_option=str(ControlMode.MANUAL.value),
+                                           options_list=dropdown_options,
+                                           manager=self.manager)
+
+        self.digital_mode_manager = DigitalManager(self, self.managers_list)
+
+
 
 
         self.battery.bar_filled_colour = (0, 255, 0)
@@ -83,6 +104,22 @@ class MainMenu:
                 button_func = self.buttons.get(event.ui_element)
                 if button_func:
                     button_func()
+
+            # Closes menu after choice and process switch mode
+            if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
+                if event.ui_element == self.mode_button:
+                    self.CONTROL_MODE = ControlMode.get_by_value(event.text)
+                    self.mode_button.selected_option = event.text
+                    self.mode_button.menu_active = False
+                    self.digital_mode_manager.is_active = self.CONTROL_MODE == ControlMode.DIGITAL
+                    print(f"switched: {self.CONTROL_MODE == ControlMode.DIGITAL} {self.CONTROL_MODE} {ControlMode.DIGITAL}")
+
+            # Closes menu after left click elsewhere
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Левый клик
+                    if not self.mode_button.relative_rect.collidepoint(event.pos):
+                        self.mode_button.menu_active = False
+
             self.manager.process_events(event)
 
     def update(self, ticks: float):
@@ -100,8 +137,12 @@ class MainMenu:
             self.trucks_speed.set_text(f'{self.SPEEDS["trucks"]}th speed')
             self.arms_speed.set_text(f'{self.SPEEDS["arm"]}th speed')
 
-            self.shoulder_forward.set_text(f'shoulder_forward: {self.sys_mon.body.right_arm.shoulder_forward.angle:.01f}')
-            self.forearm_forward.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.forearm_forward.angle:.01f}')
+            self.shoulder_forward.set_text(f'shoulder_forward: {self.sys_mon.body.right_arm.shoulder_forward.angle}')
+            self.shoulder_side.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.shoulder_side.angle}')
+            self.elbow_side.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.elbow_side.angle}')
+            self.forearm_forward.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.forearm_forward.angle}')
+            self.forearm_side.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.forearm_side.angle}')
+            self.hand.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.hand.angle}')
 
             self.manager.update(ticks)
 
@@ -125,96 +166,32 @@ class MainMenu:
         print('opened')
         self.is_active = False
         self.settings_manager.is_active = True
-        self.battery_sprite.current_energy *= 0.9
-        self.screen.fill((0, 0, 0))
-
-class SettingsMenu:
-
-    def __init__(self, main_menu):
-        self.main_menu: MainMenu = main_menu
-        self.manager = pygame_gui.UIManager((1280, 768))
-        self.is_active = False
-        LEFT_POS = 334
 
 
-
-
-
-
-        sprite_list = pygame.sprite.Group()
-        self.battery_sprite = EnergySprite(sprite_list, pos=(LEFT_POS, 700))
-        self.battery_label = pygame_gui.elements.UILabel(relative_rect=pygame.Rect((LEFT_POS, 700), (450, 50)),
-                                                    text=f'{self.battery_sprite.get_percentage()*100:0.1f}%',
-                                                    manager=self.manager)
-        fps = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 650), (100, 50)), html_text='60 fps', manager=self.manager) #, container=self.scr)
-
-        current = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 500), (100, 50)), html_text='0 A', manager=self.manager) #, container=self.scr)
-
-        trucks = pygame_gui.elements.UITextBox(relative_rect=pygame.Rect((LEFT_POS, 550), (100, 50)), html_text='2nd speed', manager=self.manager) #, container=self.scr)
-        arms = pygame_gui.elements.UIStatusBar(relative_rect=pygame.Rect((LEFT_POS, 600), (100, 50)),  manager=self.manager) #, container=self.scr)
-        settings = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((LEFT_POS, 25), (100, 50)), text='Settings',
-                                                manager=self.manager, object_id='#button1')
-        self.settings = settings
-        self.buttons = {self.settings: self.open_settings}
-
-        self.bar = pygame_gui.elements.UIVerticalScrollBar(pygame.Rect((LEFT_POS, 200), (15, 150)), manager=self.manager, visible_percentage=0.5)
-
-
-        # self.battery.bar_filled_colour = (0, 255, 0)
-        # self.battery.border_colour = (128, 128, 0)
-        # self.battery.bar_unfilled_colour = (78, 78, 78)
-        #self.toggle = pygame_gui.elements.UI2DSlider(pygame.Rect((LEFT_POS, 700), (450, 50)), 0.5, (0.6, 0.7), 0.5, (0.6, 0.7), manager=self.manager)
-        #self.toggle.scroll_position
-        #self.scr = pygame_gui.elements.UIScrollingContainer(pygame.Rect((LEFT_POS, 200), (550, 450)), manager=self.manager)
-        #self.battery = pygame_gui.elements.UIStatusBar(pygame.Rect((LEFT_POS, 700), (450, 50)), self.manager, sprite=self.battery_sprite, percent_method=self.battery_sprite.get_percentage)
-
-
-
-    def process_events(self, event: pygame.event.Event):
-
-        if self.is_active:
-            if event.type == pygame_gui.UI_BUTTON_PRESSED:
-                button_func = self.buttons.get(event.ui_element)
-                if button_func:
-                    button_func()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.is_active = False
-                    self.main_menu.is_active = True
-                    self.main_menu.screen.fill((0, 0, 0))
-                    print('close')
-
-            self.manager.process_events(event)
-
-
-    def update(self, ticks: float):
-        if self.is_active:
-            perc = self.battery_sprite.get_percentage()
-            pos_y = self.bar.scroll_position
-            a = pygame.Rect()
-
-            self.settings.set_position(pygame.Rect((334, 25), (100, 50)).move(0, pos_y*10))
-            self.manager.update(ticks)
-
-
-    def draw_ui(self, surface: pygame.surface.Surface):
-        if self.is_active:
-            self.manager.draw_ui(surface)
-
-    def open_settings(self):
-        print('LOH')
-        #print(self.toggle.scroll_position)
 
 
 class ControlMode(Enum):
-    MANUAL = -1
-    DIGITAL = 1
+    MANUAL = "Manual"
+    DIGITAL = "Digital"
+    OTHER = "Other"
+
+    @classmethod
+    def get_by_value(cls, value):
+        for member in cls:
+            if member.value == value:
+                print('found')
+                return member
+
+        return ControlMode.MANUAL
 
 
 
 
 
 if __name__ == "__main__":
+    Profiler.register("system_ping")
+    Profiler.register("rec_time")
+
     pygame.init()
     screen = pygame.display.set_mode((1280, 768))
     clock = pygame.time.Clock()
@@ -237,6 +214,7 @@ if __name__ == "__main__":
 
         main_menu.update_all(time_delta)
 
+        screen.fill((0, 0, 0))
         received_img = pygame.image.load(RESOURCES / 'image_received2.png').convert_alpha()
         screen.blit(received_img, received_img.get_rect())
 

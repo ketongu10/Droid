@@ -26,6 +26,7 @@ if __name__ == "__main__":
     t0 = time()
     print(len(json.dumps(a.get_subscribers())))
     print(time()-t0)
+    print(a.get_subscribers())
 
 
 

@@ -1,0 +1,34 @@
+{
+  "Bones": {
+    "Bone 1": {
+      "reg_name": "body/right_arm/shoulder_forward/angle",
+      "k": 360.0,
+      "bias": 0.0
+    },
+    "Bone 2": {
+      "reg_name": "body/right_arm/shoulder_side/angle",
+      "k": 360.0,
+      "bias": 0.0
+    },
+    "Bone 3": {
+      "reg_name": "body/right_arm/elbow_side/angle",
+      "k": 360.0,
+      "bias": 0.0
+    },
+    "Bone 4": {
+      "reg_name": "body/right_arm/forearm_forward/angle",
+      "k": 360.0,
+      "bias": 0.0
+    },
+    "Bone 5": {
+      "reg_name": "body/right_arm/forearm_side/angle",
+      "k": 360.0,
+      "bias": 0.0
+    },
+    "Bone 6": {
+      "reg_name": "body/right_arm/hand/angle",
+      "k": 360.0,
+      "bias": 0.0
+    }
+  }
+}

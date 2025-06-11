@@ -10,12 +10,14 @@ from RPI.control.main.server.hardware.Interfaces.IDevice import IDevice
 from RPI.control.main.server.hardware.Interfaces.IExecuteOrders import IExecuteOrders
 from RPI.control.main.server.hardware.Interfaces.IUseI2C import IUseI2C
 from RPI.control.main.server.hardware.Orders import Orders
+from RPI.control.main.server.hardware.iohelper import read_body_config
+from RPI.control.project_settings import RESOURCES
 
 
 class HWController(AbstractStream):
 
-    RIGHT_ARM_MALINA_ADR = 0x17, 0x27
-    LEFT_ARM_MALINA_ADR = 0x18, 0x28
+    RIGHT_ARM_MALINA_ADR = 0x17, '/dev/ttyUSB0'
+    LEFT_ARM_MALINA_ADR = 0x18, '/dev/ttyUSB0'
 
     ACCUMULATOR_ADR = 0x17
 
@@ -32,6 +34,8 @@ class HWController(AbstractStream):
         self.orders: Orders | None = None
         self.working_devices = []
 
+        self.body_config = read_body_config(RESOURCES/"body_config.json")
+
         self.working = False
         self.hw_thread = Thread(target=self.execute_orders)
         if cfg["device"] == "RPI":
@@ -40,6 +44,7 @@ class HWController(AbstractStream):
                 self.camera = CameraController(cfg)
                 self.camera_is_available = True
                 self.working_devices.append(self.camera)
+                Debugger.GREEN().print("CAMERA IS WORKING")
             except Exception as e:
                 Debugger.RED().print(e)
 
@@ -49,6 +54,7 @@ class HWController(AbstractStream):
                 self.trucks_are_available = True
                 if self.trucks_are_available:
                     self.working_devices.append(self.trucks)
+                    Debugger.GREEN().print("TRUCKS ARE WORKING")
             except Exception as e:
                 Debugger.RED().print(e)
 
@@ -58,21 +64,24 @@ class HWController(AbstractStream):
                 self.i2c_is_available = True
                 if self.i2c_is_available:
                     self.working_devices.append(self.i2c_bus)
+                    Debugger.GREEN().print("I2C BUS FOUND")
             except Exception as e:
                 Debugger.RED().print(e)
 
             if self.i2c_is_available:
                 try:
                     from RPI.control.main.server.hardware.ArmController import ArmController
-                    self.right_arm = ArmController(self.i2c_bus, HWController.RIGHT_ARM_MALINA_ADR)
+                    self.right_arm = ArmController(self.i2c_bus, HWController.RIGHT_ARM_MALINA_ADR, self)
                     self.right_arm_is_available = self.right_arm.is_available()
                     if self.right_arm_is_available:
                         self.working_devices.append(self.right_arm)
+                        Debugger.GREEN().print("RIGHT ARM CONTROLLER IS READY")
 
-                    self.left_arm = ArmController(self.i2c_bus, HWController.LEFT_ARM_MALINA_ADR, is_right_arm=False)
+                    self.left_arm = ArmController(self.i2c_bus, HWController.LEFT_ARM_MALINA_ADR, self, is_right_arm=False)
                     self.left_arm_is_available = self.left_arm.is_available()
                     if self.left_arm_is_available:
                         self.working_devices.append(self.left_arm)
+                        Debugger.GREEN().print("LEFT ARM CONTROLLER IS READY")
                 except Exception as e:
                     Debugger.RED().print(e)
 
@@ -99,12 +108,9 @@ class HWController(AbstractStream):
 
         for device in self.working_devices:
             if isinstance(device, IExecuteOrders):
-                device.execute_orders(self.orders)
                 device.carry_out_measurements(self.system_monitoring)
+                device.execute_orders(self.orders)
 
-        # self.system_monitoring.accumulator.A.update_buffer(np.random.uniform())
-        # self.system_monitoring.accumulator.V.update_buffer(1.5*np.random.uniform())
-        # self.system_monitoring.body.right_arm.forearm_forward.angle = 1.5*np.random.uniform()
         self.system_monitoring.update_subscribers()
 
     def finalize(self):

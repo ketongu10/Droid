@@ -83,5 +83,4 @@ class SystemStream(AbstractStream):
             "move": mode
         })
         Debugger.print(message)
-        print("dawdwa", mode)
         self.system_sock.send(SystemStream.to_bytes(message))

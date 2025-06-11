@@ -47,6 +47,7 @@ class OpenMonitoring(Activator):
 
     def update(self) -> None:
         if self.is_opened and self.device.view_process:
+            self.device.update_viewer()
             if not self.device.check_alive_viewer():
                 self.is_opened = False
                 print('Closed')

@@ -1,7 +1,7 @@
 import pygame
 
 from RPI.control.main.client.inputoutput.ClientMainScreen import ClientMainScreen
-from RPI.control.main.client.inputoutput.GUI.MainMenu import MainMenu
+from RPI.control.main.client.inputoutput.GUI.MainMenu import MainMenu, ControlMode
 from RPI.control.main.monitoring.Profiler import Profiler
 
 class SpecDict:
@@ -54,20 +54,17 @@ class InputHandler:
     @Profiler.register("input_handler")
     def get_control_input(self) -> dict:
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                movement_name = InputHandler.CONTROL_SETTINGS.get(event.key)
-                if movement_name is not None:
-                    InputHandler.IS_PRESSED[movement_name] = True
-            elif event.type == pygame.KEYUP:
-                movement_name = InputHandler.CONTROL_SETTINGS.get(event.key)
-                if movement_name is not None:
-                    InputHandler.IS_PRESSED[movement_name] = False
+            if self.main_menu.CONTROL_MODE == ControlMode.MANUAL:
+                if event.type == pygame.KEYDOWN:
+                    movement_name = InputHandler.CONTROL_SETTINGS.get(event.key)
+                    if movement_name is not None:
+                        InputHandler.IS_PRESSED[movement_name] = True
+                elif event.type == pygame.KEYUP:
+                    movement_name = InputHandler.CONTROL_SETTINGS.get(event.key)
+                    if movement_name is not None:
+                        InputHandler.IS_PRESSED[movement_name] = False
 
             self.main_menu.process_events_all(event)
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_TAB:
-                    self.main_menu.CONTROL_MODE *= -1
 
             if event.type == pygame.QUIT:  # Проверяем на выход из игры
                 return {"status": "Quit"}
