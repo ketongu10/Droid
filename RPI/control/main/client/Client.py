@@ -35,6 +35,7 @@ class Client:
         main_menu = ClientMainScreen.init_screen(Client.system_monitoring)
         Client.input_handler = InputHandler(main_menu)
         Client.network = ClientNetwork(cfg, Client.system_monitoring.get_subscribers(), Client.FPS)
+        Client.system_monitoring.net = Client.network #for proper time calculating
         Client.clock = pygame.time.Clock()
 
 
@@ -66,6 +67,7 @@ class Client:
     @staticmethod
     def send_commands_to_server(control_inputs: dict):
         Client.network.send_commands_to_server(control_inputs)
+
 
     @staticmethod
     def render_screen(tick):

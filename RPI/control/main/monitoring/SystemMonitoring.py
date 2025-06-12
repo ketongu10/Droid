@@ -11,15 +11,20 @@ from RPI.control.main.network.Side import Side
 
 class SystemMonitoring(IPhysicalDevice):
     def __init__(self, side=Side.Client):
-
         self.accumulator = VACharacteristics(100, V_bounds=(0, 20), A_bounds=(0, 3), side=side)
         self.body = BodyPosition(side)
         self.subscribers = self.get_subscribers()
+        self.net = None
 
     @Profiler.register('SystemMonitoring.update_subscribers')
     def update_subscribers(self):
         self.subscribers['accumulator'] = self.accumulator.get_subscribers()
         self.subscribers['body'] = self.body.get_subscribers()
+
+    def set_subscription_values(self, parameters: dict):
+        self.net.system_stream.received_time[:-1] = self.net.system_stream.received_time[1:]
+        self.net.system_stream.received_time[-1] = time() - self.net.initial_time
+        super().set_subscription_values(parameters)
 
 if __name__ == "__main__":
     a = SystemMonitoring()

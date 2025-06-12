@@ -52,8 +52,9 @@ class SystemStream(AbstractStream):
 
         if data["title"] == "system_info":
             self.received_data = data
-            self.received_time[:-1] = self.received_time[1:]
-            self.received_time[-1] = rec_time - self.network.initial_time
+            # self.received_time[:-1] = self.received_time[1:]
+            # self.received_time[-1] = rec_time - self.network.initial_time
+
 
     def parse_incoming_message(self, message):
         return {}

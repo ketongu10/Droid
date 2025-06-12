@@ -139,9 +139,10 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
                     should_change = True
                     self.move_i_motor(motor_key, Motions.get_by_code(directives[i]), ArmController.SPEEDS[self.arm_speed])
                     if should_change:
-                        self.target_pos[motor_key] = self.hw_controller.system_monitoring.body. \
-                            __getattribute__(self.arm_key). \
-                            __getattribute__(motor_key).angle.last_values[-1]
+                        if motor_key in self.target_pos.keys():
+                            self.target_pos[motor_key] = self.hw_controller.system_monitoring.body. \
+                                __getattribute__(self.arm_key). \
+                                __getattribute__(motor_key).angle.last_values[-1]
             if should_change:
                 self.mode = directives
                 # for key in self.target_pos.keys():

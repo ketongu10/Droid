@@ -88,7 +88,10 @@ class IPhysicalDevice:
                     axs[j].plot(Xs[j][inds], Ys[j][inds], c='r')
                 else:
                     inds = np.where((Xs[j] >= X_last[j]) & (Xs[j] <= x_max))
-                    axs[j].plot(Xs[j][inds], Ys[j][inds], c='r')
+                    if inds[0].any():
+                        X_last[j] = Xs[j][max(inds[0])]
+                        axs[j].plot(Xs[j][inds], Ys[j][inds], c='r')
+
 
             if i % LAST_N == 0:
                 for name_i in range(n_shms):
