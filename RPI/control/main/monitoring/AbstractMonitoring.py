@@ -14,18 +14,22 @@ from RPI.control.main.monitoring.Renderer import Renderer
 class AbstractMonitor:
 
     unique_name = 0
-    def __init__(self, bufsize, bounds=(-1, 1), side=Side.Client):
+    def __init__(self, bufsize, bounds=(-1, 1), side=Side.Client, sh_mem_name=None):
         if side == Side.Client:
-            self.shm = SharedMemory(name=AbstractMonitor.get_unique_name(), create=True, size=bufsize*4)
+            sh_mem_name_ = sh_mem_name if sh_mem_name is not None else AbstractMonitor.get_unique_name()
+            self.shm = SharedMemory(name=sh_mem_name_, create=True, size=bufsize*4)
             self.last_values = np.ndarray(shape=(bufsize,), dtype=np.float32, buffer=self.shm.buf)
         else:
             self.last_values = np.ndarray(shape=(bufsize,), dtype=np.float32)
         self.max = bounds[1]
         self.min = bounds[0]
 
+    def last(self):
+        return f'{self.last_values[-1]:0.4f}'
+
     def update_buffer(self, source=None):
         self.last_values[0:-1] = self.last_values[1:]
-        self.last_values[-1] = np.random.uniform(self.min, self.max) if source is None else source
+        self.last_values[-1] = np.random.uniform(self.min, self.max) if source is None else float(source)
 
     def render(self, renderer_, _screen, pos=(10, 10)):
         renderer_.ax.cla()
@@ -65,7 +69,7 @@ class VACharacteristics(IPhysicalDevice):
         _screen.blit(renderer_.fig, pos)
 
     def get_subscribers(self) -> dict:
-        return {"V": float(self.V.last_values[-1]), "A": float(self.A.last_values[-1])}
+        return {"V": self.V.last(), "A": self.A.last()}
 
     def set_subscription_values(self, parameters: dict):
         self.update_buffer(parameters["V"], parameters["A"])

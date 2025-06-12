@@ -14,12 +14,13 @@ def init_subscribers(side=Side.Client):
         Debugger.subscribers = [
 
             #'AbstractStream.to_bytes',
-            #'AbstractStream.from_bytes',
+            # 'AbstractStream.from_bytes',
             'AbstractStream.maintain_fps',
             # 'VideoStream._read_from_video_stream',
             'SystemStream.change_speeds',
             #'SystemStream.move',
             'Network.start_session'
+            'SystemStream.read_from_system_stream',
         ]
         Profiler.subscribers["video_ping"] = LazyMonitoring()
         Profiler.subscribers["rec_time"] = LazyMonitoring()

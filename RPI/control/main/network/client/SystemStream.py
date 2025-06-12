@@ -19,8 +19,8 @@ class SystemStream(AbstractStream):
         self.working = False
         self.dt = 1/fps
         self.received_data: dict = {"subscribers": {}}
-        self.received_time_shm = SharedMemory(name=SHM_CLIENT_SYSSTR_TIME, create=True, size=4*100)
-        self.received_time = np.ndarray(shape=(100, ), dtype=np.float32, buffer=self.received_time_shm.buf)
+        # self.received_time_shm = SharedMemory(name=SHM_CLIENT_SYSSTR_TIME, create=True, size=4*100)
+        # self.received_time = np.ndarray(shape=(100, ), dtype=np.float32, buffer=self.received_time_shm.buf)
         self.network = network
         self.system_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.system_sock.connect((cfg["HOST"], cfg["GEN_PORT"]))

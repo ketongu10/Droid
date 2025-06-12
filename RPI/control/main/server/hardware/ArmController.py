@@ -12,7 +12,7 @@ from RPI.control.main.server.hardware.Interfaces.IUseI2C import IUseI2C
 from RPI.control.main.server.hardware.Orders import Orders
 import serial
 
-from RPI.control.main.server.hardware.iohelper import calc_angles_velocities
+from RPI.control.main.server.hardware.iohelper import calc_angles_velocities, calc_speeds
 
 
 class Motions(Enum):
@@ -164,9 +164,9 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
             line = self.encoder_desc.readline().decode('utf-8').strip()
             if line:  # Игнорируем пустые строки
                 last_line = line
-        data = last_line.split('_')[7:13] if last_line else None
+        data = last_line.split('_') if last_line else None
         if data is not None:
-            data = calc_angles_velocities(self.hw_controller.body_config, data, self.right_arm)
+            data = data[1:7], calc_angles_velocities(self.hw_controller.body_config, data[7:13], self.right_arm)
 
         return data
 
@@ -174,7 +174,8 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
     def carry_out_measurements(self, subscribers: SystemMonitoring) -> None:
         data = self.parse_serial()
         if data:
-            sf, ss, es, ff, fs, h = data
+            rotor_speeds, (sf, ss, es, ff, fs, h) = data
+            print(rotor_speeds)
             if self.right_arm:
                 subscribers.body.right_arm.shoulder_forward.angle.update_buffer(sf)
                 subscribers.body.right_arm.shoulder_side.angle.update_buffer(ss)
@@ -182,6 +183,13 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
                 subscribers.body.right_arm.forearm_forward.angle.update_buffer(ff)
                 subscribers.body.right_arm.forearm_side.angle.update_buffer(fs)
                 subscribers.body.right_arm.hand.angle.update_buffer(h)
+
+                subscribers.body.right_arm.hand.angular_speed.update_buffer(
+                    calc_speeds(subscribers.body.right_arm.hand.angle.last_values)*20
+                )
+                subscribers.body.right_arm.hand.rotor_speed.update_buffer(
+                    (float(rotor_speeds[0])-1000)/100
+                )
             else:
                 subscribers.body.left_arm.shoulder_forward.angle.update_buffer(sf)
                 subscribers.body.left_arm.shoulder_side.angle.update_buffer(ss)

@@ -12,6 +12,8 @@ def calc_angles_velocities(config, data, is_right):
     return sf, ss, es, ff, fs, h
 
 
+def calc_speeds(arr):
+    return arr[-1]-arr[-2]
 
 def make_bytecode_func(k, bias):
     def f(x):

@@ -1,7 +1,7 @@
 from threading import Thread
 
 import numpy as np
-
+from time import time
 from RPI.control.main.monitoring.Debugger import Debugger
 from RPI.control.main.monitoring.Profiler import Profiler
 from RPI.control.main.monitoring.SystemMonitoring import SystemMonitoring
@@ -111,6 +111,7 @@ class HWController(AbstractStream):
                 device.carry_out_measurements(self.system_monitoring)
                 device.execute_orders(self.orders)
 
+        self.system_monitoring.time.update_buffer(time()-self.system_monitoring.initial_time)
         self.system_monitoring.update_subscribers()
 
     def finalize(self):

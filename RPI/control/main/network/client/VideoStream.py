@@ -37,7 +37,6 @@ class VideoStream(AbstractStream):
         full_msg = b''
         new_msg = True
         t0_rec = time()
-
         while True:
             msg = self.video_sock.recv(1024)  # 32768)
             if msg != b'':
