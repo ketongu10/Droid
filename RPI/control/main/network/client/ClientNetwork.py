@@ -17,12 +17,16 @@ class ClientNetwork:
         self.video_stream = VideoStream(cfg, self, fps)
         self.define_settings(subscribers)
 
-    def send_commands_to_server(self, control_inputs: dict):
+    def send_commands_to_server_old(self, control_inputs: dict):
         self.system_stream.move(control_inputs["trucks_movements"])
         self.system_stream.move_arm(control_inputs["arm_movements"])
         speed_mode = control_inputs["change_speeds"]
         if speed_mode is not None:
             self.system_stream.change_speeds(speed_mode)
+
+    def send_commands_to_server(self, control_inputs: dict):
+        self.system_stream.send_order(control_inputs)
+
 
     def define_settings(self, subscribers: list):
         self.system_stream.system_sock.send(SystemStream.to_bytes({

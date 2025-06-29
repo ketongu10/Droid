@@ -9,10 +9,11 @@ from RPI.control.main.monitoring.SystemMonitoring import SystemMonitoring
 from RPI.control.main.server.hardware.Interfaces.IDevice import IDevice
 from RPI.control.main.server.hardware.Interfaces.IExecuteOrders import IExecuteOrders
 from RPI.control.main.server.hardware.Interfaces.IUseI2C import IUseI2C
-from RPI.control.main.server.hardware.Orders import Orders
+from RPI.control.main.server.hardware.Orders import Orders, GeneralOrders, ControlMode
 import serial
 
 from RPI.control.main.server.hardware.iohelper import calc_angles_velocities, calc_speeds
+from RPI.control.main.server.hardware.motor_filter import MotorFilter
 
 
 class Motions(Enum):
@@ -33,7 +34,7 @@ class Motions(Enum):
             return Motions.STOP
 
     @staticmethod
-    def GET(direction):
+    def FROM_SIGN(direction):
         if direction>0:
             return Motions.UP
         elif direction<0:
@@ -41,7 +42,7 @@ class Motions(Enum):
         return Motions.STOP
 
     @staticmethod
-    def GET_DIRECT(motion):
+    def TO_SIGN(motion):
         if motion == Motions.UP:
             return 1
         elif motion == Motions.DOWN:
@@ -66,12 +67,15 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
     }
     SPEEDS = [0, 86, 127, 200, 255]
 
+
     def __init__(self,  bus, adr, hw_controller, is_right_arm=True):
         super().__init__(bus, adr[0])
         self.hw_controller = hw_controller
         self.encoder_desc_path = adr[1]
         self.encoder_desc = None
         self.mode = "______"
+        self.control_mode = ControlMode.M.value
+
         self.right_arm = is_right_arm
         self.arm_key = f"{'right' if self.right_arm else 'left'}_arm"
         self.arm_speed = 2
@@ -81,8 +85,14 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
             # "elbow_side": -1,
             # "forearm_forward": -1,
             # "forearm_side": -1,
-            "hand": -1,
+            "hand": 0.5,
         }
+        self.motor_filters = {}
+        # for key in self.target_pos.keys():
+        #     self.motor_filters[key] = MotorFilter(size=7, sigma=2)
+        for key in ArmController.motor_table.keys():
+            self.motor_filters[key] = MotorFilter(size=7, sigma=2)
+
 
     def is_available(self):
 
@@ -106,15 +116,19 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
         return motion_is_ok and encoder_is_ok
 
     def move_i_motor(self, motor_key, motion: Motions, pwm_level):
-        self.bus.write_byte_data(self.malina_adr, ArmController.motor_table[motor_key].motion_adr, motion.value)
-        self.bus.write_byte_data(self.malina_adr, ArmController.motor_table[motor_key].pwm_level_adr, pwm_level)
+
+        actual_action = self.motor_filters[motor_key](Motions.TO_SIGN(motion)*pwm_level)
+        actual_pwm, actual_motion = int(abs(actual_action))%255, Motions.FROM_SIGN(actual_action)
+
+        self.bus.write_byte_data(self.malina_adr, ArmController.motor_table[motor_key].motion_adr, actual_motion.value)
+        self.bus.write_byte_data(self.malina_adr, ArmController.motor_table[motor_key].pwm_level_adr, actual_pwm)
 
         self.hw_controller.system_monitoring.body.\
                         __getattribute__(self.arm_key).\
                         __getattribute__(motor_key).\
-                        VA.V.update_buffer(16*pwm_level/255 * Motions.GET_DIRECT(motion))
+                        VA.V.update_buffer(16 * actual_action / 255)
 
-    def execute_orders(self, orders: Orders) -> None:
+    def execute_orders_old(self, orders: Orders) -> None:
         if orders:
             """
                 CHANGING SPEED
@@ -126,6 +140,12 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
             else:
                 self.arm_speed = sp_ar
 
+            # """
+            #     change target pos
+            # """
+            # if orders.target_pos != '_':
+            #     self.target_pos["hand"] = float(orders.target_pos)
+
             """
                 MOVE MOTORS
             """
@@ -134,10 +154,11 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
             should_change = False
             # check whether directives changed
             for i, motor_key in enumerate(ArmController.motor_table.keys()):
+                self.move_i_motor(motor_key, Motions.get_by_code(directives[i]), ArmController.SPEEDS[self.arm_speed])
                 if self.mode[i] != directives[i]:
                     # setting up new directives
                     should_change = True
-                    self.move_i_motor(motor_key, Motions.get_by_code(directives[i]), ArmController.SPEEDS[self.arm_speed])
+
                     if should_change:
                         if motor_key in self.target_pos.keys():
                             self.target_pos[motor_key] = self.hw_controller.system_monitoring.body. \
@@ -150,6 +171,49 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
                 #     self.target_pos[key] = self.hw_controller.system_monitoring.body.\
                 #         __getattribute__(arm_key).\
                 #         __getattribute__(key).angle
+
+
+
+    def execute_orders(self, orders: GeneralOrders) -> None:
+        if orders:
+
+            control_mode = orders.data['mode']
+            self.control_mode = control_mode
+            if control_mode == ControlMode.M.value:
+
+                sp_ar = int(orders.data[self.arm_key].data['speed'])
+                if sp_ar > 4 or sp_ar < 0:
+                    Debugger.ORANGE().print(f"THERE IS NO SUCH SPEED {sp_ar}")
+                else:
+                    self.arm_speed = sp_ar
+                    directives = orders.data[self.arm_key].data[control_mode].replace('|', '')
+
+                    self.mode = directives
+
+                    for i, motor_key in enumerate(ArmController.motor_table.keys()):
+                        self.move_i_motor(motor_key, Motions.get_by_code(directives[i]), ArmController.SPEEDS[self.arm_speed])
+
+            elif control_mode == ControlMode.P.value:
+
+                sp_ar = int(orders.data[self.arm_key].data['speed'])
+                if sp_ar > 4 or sp_ar < 0:
+                    Debugger.ORANGE().print(f"THERE IS NO SUCH SPEED {sp_ar}")
+                else:
+                    self.arm_speed = sp_ar
+                    self.mode = '______'
+                    for i, motor_key in enumerate(ArmController.motor_table.keys()):
+                        if motor_key in self.target_pos.keys():
+                            self.target_pos[motor_key] = orders.data[self.arm_key].to_floats(control_mode)
+
+            else:
+                self.mode = '______'
+
+
+
+
+
+
+
 
     def get_angle_by_bufpos(self, bufpos):
         ret = (self.bus.read_byte_data(self.encoder_desc, bufpos - 1) * 255 +
@@ -175,7 +239,6 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
         data = self.parse_serial()
         if data:
             rotor_speeds, (sf, ss, es, ff, fs, h) = data
-            print(rotor_speeds)
             if self.right_arm:
                 subscribers.body.right_arm.shoulder_forward.angle.update_buffer(sf)
                 subscribers.body.right_arm.shoulder_side.angle.update_buffer(ss)
@@ -185,10 +248,15 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
                 subscribers.body.right_arm.hand.angle.update_buffer(h)
 
                 subscribers.body.right_arm.hand.angular_speed.update_buffer(
-                    calc_speeds(subscribers.body.right_arm.hand.angle.last_values)*20
+                    calc_speeds(subscribers.body.right_arm.hand.angle.last_values,
+                                subscribers.time.last_values)
+                )
+                subscribers.body.right_arm.hand.rotor_angle.update_buffer(
+                    (float(rotor_speeds[0])-1000)
                 )
                 subscribers.body.right_arm.hand.rotor_speed.update_buffer(
-                    (float(rotor_speeds[0])-1000)/100
+                    calc_speeds(subscribers.body.right_arm.hand.rotor_angle.last_values,
+                                subscribers.time.last_values)/200
                 )
             else:
                 subscribers.body.left_arm.shoulder_forward.angle.update_buffer(sf)
@@ -197,20 +265,22 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
                 subscribers.body.left_arm.forearm_forward.angle.update_buffer(ff)
                 subscribers.body.left_arm.forearm_side.angle.update_buffer(fs)
                 subscribers.body.left_arm.hand.angle.update_buffer(h)
-        self.hold_last_pos(subscribers)
+
+        if self.control_mode == ControlMode.P.value:
+            self.hold_last_pos(subscribers)
 
 
     def hold_last_pos(self, subscribers: SystemMonitoring):
 
         min_val = 0.01
-        if self.target_pos["hand"] != -1 and self.mode == "______":
+        if self.mode == "______":
             arm = subscribers.body.__getattribute__(self.arm_key)
             arm_config = self.hw_controller.body_config[self.arm_key]
             for key in self.target_pos.keys():
                 dif = arm.__getattribute__(key).angle.last_values[-1] - self.target_pos[key]
                 pwm = int(ArmController.SPEEDS[self.arm_speed] * self.clip(abs(dif-min_val)/min_val/2, 0, 1))
                 direction = dif * arm_config[key].motor_direction
-                direction = Motions.GET(direction)
+                direction = Motions.FROM_SIGN(direction)
                 print(dif, key)
                 if abs(dif) < min_val:
                     self.move_i_motor(key, Motions.STOP, 0)

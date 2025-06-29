@@ -59,6 +59,16 @@ class SystemStream(AbstractStream):
     def parse_incoming_message(self, message):
         return {}
 
+    def send_order(self, order_data):
+
+        message = json.dumps({
+            "title": "command",
+            "command": "new_order",
+            "order": order_data
+        })
+        Debugger.print(message)
+        self.system_sock.send(SystemStream.to_bytes(message))
+
     def move(self, side):
         message = json.dumps({
             "title": "command",

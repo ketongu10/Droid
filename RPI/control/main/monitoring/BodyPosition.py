@@ -19,6 +19,7 @@ class Joint(IPhysicalDevice):
     def __init__(self, side):
         self.angle = AbstractMonitor(100, (0, 1), side=side)
         self.angular_speed = AbstractMonitor(100, (-1, 1), side=side)
+        self.rotor_angle = AbstractMonitor(100, (-1, 1), side=side)
         self.rotor_speed = AbstractMonitor(100, (-1, 1), side=side)
         self.VA = VACharacteristics(100, (-16, 16), side=side)
 

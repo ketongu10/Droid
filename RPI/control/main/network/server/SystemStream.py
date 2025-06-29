@@ -4,14 +4,14 @@ import json
 import sys
 from threading import Thread
 from RPI.control.main.network.AbstractStream import AbstractStream
-from RPI.control.main.server.hardware.Orders import Orders
+from RPI.control.main.server.hardware.Orders import GeneralOrders
 from RPI.control.main.monitoring.Debugger import Debugger
 
 class SystemStream(AbstractStream):
 
     def __init__(self, cfg, server_network):
         self.working = False
-        self.received_orders = Orders()
+        self.received_orders = GeneralOrders()
         self.server_network = server_network
         self.subscribers = {}
         self.connection = None
@@ -38,14 +38,17 @@ class SystemStream(AbstractStream):
                     break
 
                 if data["title"] == "command":
-                    if data["command"] == "should_move":
-                        self.received_orders.trucks = data["move"]
+                    if data["command"] == "new_order":
+                        self.received_orders.deserialize(data["order"])
 
-                    if data["command"] == "arm_move":
-                        self.received_orders.right_arm = data["move"]
-
-                    if data["command"] == "change_speeds":
-                        self.received_orders.speeds = data["move"]
+                    # if data["command"] == "should_move":
+                    #     self.received_orders.trucks = data["move"]
+                    #
+                    # if data["command"] == "arm_move":
+                    #     self.received_orders.right_arm = data["move"]
+                    #
+                    # if data["command"] == "change_speeds":
+                    #     self.received_orders.speeds = data["move"]
 
             except Exception as e:
                 Debugger.RED().print(f"ServerSystemStream: {e}")

@@ -1,8 +1,10 @@
 import pygame
 
 from RPI.control.main.client.inputoutput.ClientMainScreen import ClientMainScreen
-from RPI.control.main.client.inputoutput.GUI.MainMenu import MainMenu, ControlMode
+from RPI.control.main.client.inputoutput.GUI.MainMenu import MainMenu
 from RPI.control.main.monitoring.Profiler import Profiler
+from RPI.control.main.server.hardware.Orders import ControlMode
+
 
 class SpecDict:
     def __init__(self):
@@ -54,7 +56,7 @@ class InputHandler:
     @Profiler.register("input_handler")
     def get_control_input(self) -> dict:
         for event in pygame.event.get():
-            if self.main_menu.CONTROL_MODE == ControlMode.MANUAL:
+            if self.main_menu.CONTROL_MODE == ControlMode.M:
                 if event.type == pygame.KEYDOWN:
                     movement_name = InputHandler.CONTROL_SETTINGS.get(event.key)
                     if movement_name is not None:
@@ -113,6 +115,7 @@ class InputHandler:
 
         # CHANGING SPEEDS
         speed_mode = None
+
         if InputHandler.IS_PRESSED["trucks_speed_up"] or InputHandler.IS_PRESSED["trucks_speed_down"]:
             self.SPEEDS_TIMER["trucks"] += 1
         else:
@@ -143,5 +146,4 @@ class InputHandler:
 
         return {"trucks_movements": trucks_move_command,
                 "arm_movements": arm_move,
-                "change_speeds": speed_mode,
                 "status": "Successfully"}

@@ -1,6 +1,8 @@
+import json
 
 import pygame_gui
 import pygame
+from RPI.control.project_settings import UNITY
 from RPI.control.main.client.inputoutput.GUI.BaseManager import Activator, SettingsLabeling
 
 LEFT_POS = 800
@@ -12,8 +14,10 @@ class DigitalManager:
         self.manager = pygame_gui.UIManager(SettingsLabeling.manager_screen)
         managers_list.append(self)
         self.is_active = False
+        self.should_send = False
+        self.positions = {}
 
-        self.accept_pos = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((MID_POS, 75), (120, 50)), text='Accept Position',
+        self.accept_pos = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((MID_POS+100,25), (120, 50)), text='Accept Position',
                                                 manager=self.manager)
 
     def process_events(self, event: pygame.event.Event):
@@ -21,6 +25,13 @@ class DigitalManager:
         if self.is_active and self.parent.is_active:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
                 if event.ui_element == self.accept_pos:
+
+                    with open(UNITY/'ViewPosition_Data/StreamingAssets/transfered_pos_out.json', 'r') as f:
+                        data = json.load(f)
+                        for key, value in data["angles"].items():
+                            self.positions[key] = value
+
+                    self.should_send = True
                     print("SENDING POSITION")
 
             self.manager.process_events(event)

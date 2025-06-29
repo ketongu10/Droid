@@ -21,6 +21,7 @@ def init_subscribers(side=Side.Client):
             #'SystemStream.move',
             'Network.start_session'
             'SystemStream.read_from_system_stream',
+            # 'SystemStream.send_order',
         ]
         Profiler.subscribers["video_ping"] = LazyMonitoring()
         Profiler.subscribers["rec_time"] = LazyMonitoring()

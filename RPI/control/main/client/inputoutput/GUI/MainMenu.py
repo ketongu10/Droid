@@ -9,6 +9,7 @@ from RPI.control.main.client.inputoutput.GUI.Utils import EnergySprite
 from RPI.control.main.client.inputoutput.Subproc.PosViewer import PosViewer
 from RPI.control.main.monitoring.Profiler import Profiler
 from RPI.control.main.monitoring.SystemMonitoring import SystemMonitoring
+from RPI.control.main.server.hardware.Orders import ControlMode
 from RPI.control.project_settings import RUNS, RESOURCES
 
 
@@ -77,10 +78,10 @@ class MainMenu:
 
 
         # MODE CONTROL
-        self.CONTROL_MODE = ControlMode.MANUAL
+        self.CONTROL_MODE = ControlMode.M
         dropdown_options = [str(member.value) for member in ControlMode]
         self.mode_button = pygame_gui.elements.UIDropDownMenu(relative_rect=pygame.Rect((MID_POS, 25), (100, 50)),
-                                           starting_option=str(ControlMode.MANUAL.value),
+                                           starting_option=str(ControlMode.M.value),
                                            options_list=dropdown_options,
                                            manager=self.manager)
 
@@ -111,8 +112,8 @@ class MainMenu:
                     self.CONTROL_MODE = ControlMode.get_by_value(event.text)
                     self.mode_button.selected_option = event.text
                     self.mode_button.menu_active = False
-                    self.digital_mode_manager.is_active = self.CONTROL_MODE == ControlMode.DIGITAL
-                    print(f"switched: {self.CONTROL_MODE == ControlMode.DIGITAL} {self.CONTROL_MODE} {ControlMode.DIGITAL}")
+                    self.digital_mode_manager.is_active = self.CONTROL_MODE == ControlMode.P
+                    print(f"switched: {self.CONTROL_MODE == ControlMode.P} {self.CONTROL_MODE} {ControlMode.P}")
 
             # Closes menu after left click elsewhere
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -170,19 +171,7 @@ class MainMenu:
 
 
 
-class ControlMode(Enum):
-    MANUAL = "Manual"
-    DIGITAL = "Digital"
-    OTHER = "Other"
 
-    @classmethod
-    def get_by_value(cls, value):
-        for member in cls:
-            if member.value == value:
-                print('found')
-                return member
-
-        return ControlMode.MANUAL
 
 
 

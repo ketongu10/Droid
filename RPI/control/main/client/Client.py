@@ -7,6 +7,7 @@ from RPI.control.main.monitoring.Profiler import Profiler
 from RPI.control.main.network.Side import Side
 from RPI.control.main.network.client.ClientNetwork import ClientNetwork
 from RPI.control.main.monitoring.SystemMonitoring import SystemMonitoring
+from RPI.control.main.server.hardware.Orders import ControlMode, GeneralOrders
 from inputoutput.InputHandler import InputHandler
 from inputoutput.ClientMainScreen import ClientMainScreen
 from RPI.control.main.monitoring.Debugger import Debugger
@@ -17,7 +18,7 @@ import yaml
 
 
 class Client:
-    FPS = 30
+    FPS = 120
     system_monitoring: SystemMonitoring | None
     input_handler: InputHandler | None
     network: ClientNetwork | None
@@ -48,7 +49,30 @@ class Client:
             sys.exit()
 
         elif ret["status"] == "Successfully":
-            return ret
+
+            new_order = GeneralOrders()
+            if Client.input_handler.main_menu.CONTROL_MODE == ControlMode.M:
+                Client.input_handler.main_menu.digital_mode_manager.positions.clear()
+                new_order.data['mode'] = ControlMode.M.value
+                new_order.data['trucks'].data[ControlMode.M.value] = ret['trucks_movements']
+                new_order.data['right_arm'].data[ControlMode.M.value] = ret['arm_movements']
+                new_order.data['left_arm'].data[ControlMode.M.value] = "______"
+                new_order.data['trucks'].data['speed'] = Client.input_handler.main_menu.SPEEDS['trucks']
+                new_order.data['right_arm'].data['speed'] = Client.input_handler.main_menu.SPEEDS['arm']
+                new_order.data['left_arm'].data['speed'] = Client.input_handler.main_menu.SPEEDS['arm']
+
+
+            elif Client.input_handler.main_menu.CONTROL_MODE == ControlMode.P:
+                if Client.input_handler.main_menu.digital_mode_manager.should_send:
+                    new_order.data['mode'] = ControlMode.P.value
+                    new_order.data['right_arm'].data[ControlMode.P.value] = \
+                    f'0|0|0|0|0|{Client.input_handler.main_menu.digital_mode_manager.positions["Bone 6"]:0.3f}'
+                # Client.input_handler.main_menu.digital_mode_manager.should_send = False
+
+            elif Client.input_handler.main_menu.CONTROL_MODE == ControlMode.V:
+                pass
+
+            return new_order.serialize()
         else:
             Debugger.print(f"Unexpected input return {ret}")
             Client.abort_connections()

@@ -26,8 +26,6 @@ class PosViewer(IPhysicalDevice):
 
 
 
-
-
     def on_activate_viewer(self, key):
         self.view_process = Popen(UNITY/'ViewPosition.exe')
 

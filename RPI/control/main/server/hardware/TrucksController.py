@@ -3,7 +3,7 @@ from time import sleep
 
 from RPI.control.main.server.hardware.Interfaces.IDevice import IDevice
 from RPI.control.main.server.hardware.Interfaces.IExecuteOrders import IExecuteOrders
-from RPI.control.main.server.hardware.Orders import Orders
+from RPI.control.main.server.hardware.Orders import Orders, GeneralOrders
 
 
 class TrucksController(IExecuteOrders, IDevice):
@@ -38,22 +38,22 @@ class TrucksController(IExecuteOrders, IDevice):
             "backward_left": self.backward_left
         }
 
-    def execute_orders(self, orders: Orders) -> None:
+    def execute_orders(self, orders: GeneralOrders) -> None:
         if orders:
             """
                 CHANGING SPEED
             """
-            speeds = orders.speeds
-            sp_tr, sp_ar = int(speeds[0]), int(speeds[1])
+            control_mode = orders.data['mode']
+            sp_tr = int(orders.data['trucks'].data['speed'])
             if sp_tr > 4 or sp_tr < 0:
-                print(f"THERE IS NO SUCH SPEED {speeds}")
+                print(f"THERE IS NO SUCH SPEED {sp_tr}")
             else:
                 self.trucks_speed = sp_tr
 
             """
                 MOVE MOTORS
             """
-            new_mode = TrucksController.INPUT_CONVERTER.get(orders.trucks)
+            new_mode = TrucksController.INPUT_CONVERTER.get(orders.data['trucks'].data[control_mode])
             if not new_mode:
                 new_mode = "stop_move"
 
