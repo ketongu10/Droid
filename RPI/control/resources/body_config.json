@@ -1,37 +1,49 @@
 {
   "right_arm": {
     "shoulder_forward": {
-      "k": 0.002,
-      "bias": 0.0,
+      "k": 0.0046,
+      "bias": -1.72,
       "encoder_k": 1.0,
-      "motor_direction": -1
+      "motor_direction": -1,
+      "max_pos": 1.66,
+      "min_pos": -0.34
     },
     "shoulder_side": {
-      "k": 0.001,
-      "bias": 0.0,
-      "encoder_k": 1.0
+      "k": 0.0046,
+      "bias": -1.99,
+      "encoder_k": 1.0,
+      "max_pos": 1.06,
+      "min_pos": -0.21
     },
     "elbow_side": {
-      "k": 0.001,
-      "bias": 0.0,
-      "encoder_k": 1.0
+      "k": 0.0046,
+      "bias": -2.25,
+      "encoder_k": 1.0,
+      "max_pos": 0.97,
+      "min_pos": -1.03
     },
     "forearm_forward": {
-      "k": 0.001,
-      "bias": 0.0,
-      "encoder_k": 1.0
+      "k": 0.0046,
+      "bias": -3.62,
+      "encoder_k": 1.0,
+      "max_pos": 0.0,
+      "min_pos": -2.24
     },
     "forearm_side": {
-      "k": 0.001,
-      "bias": 0.0,
+      "k": 0.0046,
+      "bias": -2.09,
       "encoder_k": 1.0,
-      "motor_direction": -1
+      "motor_direction": -1,
+      "max_pos": 1.80,
+      "min_pos": -1.77
     },
     "hand": {
-      "k": 0.001,
-      "bias": 0.0,
+      "k": 0.0046,
+      "bias": -2.22,
       "encoder_k": 1.0,
-      "motor_direction": -1
+      "motor_direction": -1,
+      "max_pos": 0.68,
+      "min_pos": -0.64
     }
   },
   "left_arm": {

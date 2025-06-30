@@ -45,7 +45,7 @@ class PosViewer(IPhysicalDevice):
             with open(UNITY/'ViewPosition_Data/StreamingAssets/transfered_pos_in.json', 'w+') as f:
                 json.dump({'angles': data, 'allowDump': True}, f)
         except PermissionError:
-            pass
+            print('POSOSAL')
 
 
 
@@ -70,7 +70,7 @@ class BoneTranslation:
             self.attr = attrs[-1]
 
     def recalculate(self):
-        return getattr(self.class_link, self.attr) * self.k + self.bias
+        return getattr(self.class_link, self.attr).last_values[-1] * self.k + self.bias
 
 
 

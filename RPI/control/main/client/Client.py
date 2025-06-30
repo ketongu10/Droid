@@ -52,7 +52,9 @@ class Client:
 
             new_order = GeneralOrders()
             if Client.input_handler.main_menu.CONTROL_MODE == ControlMode.M:
+                Client.input_handler.main_menu.digital_mode_manager.should_send = False
                 Client.input_handler.main_menu.digital_mode_manager.positions.clear()
+
                 new_order.data['mode'] = ControlMode.M.value
                 new_order.data['trucks'].data[ControlMode.M.value] = ret['trucks_movements']
                 new_order.data['right_arm'].data[ControlMode.M.value] = ret['arm_movements']
@@ -66,8 +68,7 @@ class Client:
                 if Client.input_handler.main_menu.digital_mode_manager.should_send:
                     new_order.data['mode'] = ControlMode.P.value
                     new_order.data['right_arm'].data[ControlMode.P.value] = \
-                    f'0|0|0|0|0|{Client.input_handler.main_menu.digital_mode_manager.positions["Bone 6"]:0.3f}'
-                # Client.input_handler.main_menu.digital_mode_manager.should_send = False
+                    '|'.join([f"{values:0.3f}" for _, values in Client.input_handler.main_menu.digital_mode_manager.positions.items()])
 
             elif Client.input_handler.main_menu.CONTROL_MODE == ControlMode.V:
                 pass

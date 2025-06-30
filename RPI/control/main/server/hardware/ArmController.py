@@ -201,12 +201,17 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
                 else:
                     self.arm_speed = sp_ar
                     self.mode = '______'
+                    extracted_poss = orders.data[self.arm_key].to_floats(control_mode)
                     for i, motor_key in enumerate(ArmController.motor_table.keys()):
                         if motor_key in self.target_pos.keys():
-                            self.target_pos[motor_key] = orders.data[self.arm_key].to_floats(control_mode)
+                            body_config = self.hw_controller.body_config[self.arm_key][motor_key]
+                            self.target_pos[motor_key] = self.clip(extracted_poss[i],
+                                                                   body_config.min_pos,
+                                                                   body_config.max_pos)
 
             else:
                 self.mode = '______'
+
 
 
 
@@ -239,32 +244,28 @@ class ArmController(IUseI2C, IExecuteOrders, IDevice):
         data = self.parse_serial()
         if data:
             rotor_speeds, (sf, ss, es, ff, fs, h) = data
-            if self.right_arm:
-                subscribers.body.right_arm.shoulder_forward.angle.update_buffer(sf)
-                subscribers.body.right_arm.shoulder_side.angle.update_buffer(ss)
-                subscribers.body.right_arm.elbow_side.angle.update_buffer(es)
-                subscribers.body.right_arm.forearm_forward.angle.update_buffer(ff)
-                subscribers.body.right_arm.forearm_side.angle.update_buffer(fs)
-                subscribers.body.right_arm.hand.angle.update_buffer(h)
 
-                subscribers.body.right_arm.hand.angular_speed.update_buffer(
-                    calc_speeds(subscribers.body.right_arm.hand.angle.last_values,
-                                subscribers.time.last_values)
-                )
-                subscribers.body.right_arm.hand.rotor_angle.update_buffer(
-                    (float(rotor_speeds[0])-1000)
-                )
-                subscribers.body.right_arm.hand.rotor_speed.update_buffer(
-                    calc_speeds(subscribers.body.right_arm.hand.rotor_angle.last_values,
-                                subscribers.time.last_values)/200
-                )
-            else:
-                subscribers.body.left_arm.shoulder_forward.angle.update_buffer(sf)
-                subscribers.body.left_arm.shoulder_side.angle.update_buffer(ss)
-                subscribers.body.left_arm.elbow_side.angle.update_buffer(es)
-                subscribers.body.left_arm.forearm_forward.angle.update_buffer(ff)
-                subscribers.body.left_arm.forearm_side.angle.update_buffer(fs)
-                subscribers.body.left_arm.hand.angle.update_buffer(h)
+            arm_link = subscribers.body.right_arm if self.right_arm else subscribers.body.left_arm
+
+            arm_link.shoulder_forward.angle.update_buffer(sf)
+            arm_link.shoulder_side.angle.update_buffer(ss)
+            arm_link.elbow_side.angle.update_buffer(es)
+            arm_link.forearm_forward.angle.update_buffer(ff)
+            arm_link.forearm_side.angle.update_buffer(fs)
+            arm_link.hand.angle.update_buffer(h)
+
+            arm_link.hand.angular_speed.update_buffer(
+                calc_speeds(arm_link.hand.angle.last_values,
+                            subscribers.time.last_values)
+            )
+            arm_link.hand.rotor_angle.update_buffer(
+                (float(rotor_speeds[0])-1000)
+            )
+            arm_link.hand.rotor_speed.update_buffer(
+                calc_speeds(arm_link.hand.rotor_angle.last_values,
+                            subscribers.time.last_values)/200
+            )
+
 
         if self.control_mode == ControlMode.P.value:
             self.hold_last_pos(subscribers)

@@ -139,11 +139,11 @@ class MainMenu:
             self.arms_speed.set_text(f'{self.SPEEDS["arm"]}th speed')
 
             self.shoulder_forward.set_text(f'shoulder_forward: {self.sys_mon.body.right_arm.shoulder_forward.angle}')
-            self.shoulder_side.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.shoulder_side.angle}')
-            self.elbow_side.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.elbow_side.angle}')
+            self.shoulder_side.set_text(f'shoulder_side: {self.sys_mon.body.right_arm.shoulder_side.angle}')
+            self.elbow_side.set_text(f'elbow_side: {self.sys_mon.body.right_arm.elbow_side.angle}')
             self.forearm_forward.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.forearm_forward.angle}')
-            self.forearm_side.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.forearm_side.angle}')
-            self.hand.set_text(f'forearm_forward: {self.sys_mon.body.right_arm.hand.angle}')
+            self.forearm_side.set_text(f'forearm_side: {self.sys_mon.body.right_arm.forearm_side.angle}')
+            self.hand.set_text(f'hand: {self.sys_mon.body.right_arm.hand.angle}')
 
             self.manager.update(ticks)
 

@@ -18,6 +18,7 @@ def calc_speeds(arr, time):
         return 0
     return (arr[-1]-arr[-2])/dt
 
+
 def make_bytecode_func(k, bias):
     def f(x):
         return k * x + bias
@@ -57,19 +58,22 @@ def update_body_config(config: dict, path):
 
 class ArmElement:
 
-    def __init__(self, k=0.001, bias=0.0, encoder_k=1.0, motor_direction=1):
+    def __init__(self, k=0.001, bias=0.0, encoder_k=1.0, motor_direction=1, min_pos=0.0, max_pos=1.0):
         self.k: float = k
         self.bias: float = bias
         self.encoder_k: float = encoder_k
         self.motor_direction: int = motor_direction
         self.calc_angles = make_bytecode_func(self.k, self.bias)
+        self.min_pos = min_pos
+        self.max_pos = max_pos
 
     def to_dict(self):
         return {
             "k": self.k,
             "bias": self.bias,
             "encoder_k": self.encoder_k,
-            "motor_direction": self.motor_direction
+            "min_pos": self.min_pos,
+            "max_pos": self.max_pos,
         }
 
 

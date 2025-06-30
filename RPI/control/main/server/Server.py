@@ -18,7 +18,7 @@ import yaml
 
 
 class Server:
-    FPS = 30
+    FPS = 120
     system_monitoring: SystemMonitoring | None
     hw_controller: HWController | None
     network: ServerNetwork | None
